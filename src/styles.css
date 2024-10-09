@@ -1,5 +1,7 @@
 .App {
   background: white;
-  padding-left: 10px;
-  padding-bottom: 10px;
+  margin: 20px;
+  padding: 20px;
+  border-radius: 5px;
+  border: 1px solid lightgray;
 }

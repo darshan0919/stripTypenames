@@ -1,10 +1,23 @@
-## Getting Started
-You are given a table view. *3 minor bugs require* your attention.
+## Problem Statement
+You are given a form with a bunch of fields.
 
-## Bugs
-1. The refresh icon should spin only when the refresh is in progress.
-2. Click on the first task to open a card view. Then, click on refresh. You will notice that the data in the first row of the table updates, but it does not update in the card view. Also, when a card view for the first task is open, clicking on the second task in the table view should update the card view to show the second task. Currently, it still shows the first task. Fix these issues.
-3. Editing a task in the card view should also update the task in the table view.
+**Task**: Implement Collapsible Behaviour for Fields
+
+**Objective**: Modify withCollapsibleInput HOC to support the following requirements
+
+**Requirements**:
+1. Fields without `collapsibleConfig` should not show a checkbox and label to collapse
+2. Toggling collapsible checkbox should toggle visibility of the field
+3. `initialValue` supplied via `collapsibleConfig` should be used to prepopulate the field when collapsoble input is expanded and no value present in profile for it
+4. If the user modifies value of a collapsible field and toggles it off. Then on expanding the field again, the modified value should appear in the field
+
+**Structure of collapsibleConfig**
+```aiignore
+collapsibleConfig: {
+    title: 'Text that will be disaplayed against the checkbox'
+    initialValue: 'Optionally present value for the field, to be used when there is no value present in profile'
+}
+```
 
 ## Submission Instructions
 1. Clicking "Run code" will compile and run your code against sample tests, but it will not generate scores. Click on "Execution Log" to better understand the test execution.

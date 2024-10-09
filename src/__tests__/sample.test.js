@@ -1,228 +1,386 @@
-import {render, screen, waitFor} from "@testing-library/react";
-import user from "@testing-library/user-event";
-import "@testing-library/jest-dom";
-import TaskManager from "../TaskManager";
-import TaskCard from "../TaskCard";
+import { render, screen } from '@testing-library/react';
+import user from '@testing-library/user-event';
+import '@testing-library/jest-dom';
+import { Form } from '../components/form';
 
-jest.mock('../CloseButton', () => require('../__mocks__/CloseButton')(jest.fn()));
-global.renderCountArgs = [];
-
-describe("1.", () => {
-  let tasks = [
-    {
-      id: 1,
-      title: "Task 1",
-      status: "In Progress",
-      assignee: "Alice",
-      dueDate: "2024-08-20",
-    },
-  ];
-
-  const loadTasks = () =>
-    new Promise((res) => {
-      setTimeout(() => {
-        res(tasks);
-      }, 100)
-    });
-
-  test("Refresh icon should not spin initially", async () => {
-    // jest.useFakeTimers();
-
-    render(<TaskManager loadTasks={loadTasks}/>);
-
-    // jest.runAllTimers();
-
-    await screen.findByText("Task 1");
-
-    const iconEl = screen.getByTestId("refresh-icon");
-    expect(iconEl.classList.contains("animate-spin")).toBe(false);
-
-    // jest.useRealTimers()
-  });
-  test("Refresh icon should spin when refreshing and stop when done", async () => {
-    // jest.useFakeTimers();
-
-    render(<TaskManager loadTasks={loadTasks}/>);
-
-    // jest.runAllTimers();
-
-    await screen.findByText("Task 1");
-
-    const el = screen.getByTestId("refresh-button");
-
-    await user.click(el);
-
-    const iconEl = screen.getByTestId("refresh-icon");
-    expect(iconEl.classList.contains("animate-spin")).toBe(true);
-
-    // jest.runAllTimers();
-
-    await waitFor(() => {
-      expect(iconEl.classList.contains("animate-spin")).toBe(false);
-    }, {timeout: 200})
-
-    // jest.useRealTimers()
-  });
-});
-
-describe("2.", () => {
-  let tasks = [
-    {
-      id: 1,
-      title: "Task 1",
-      status: "In Progress",
-      assignee: "Alice",
-      dueDate: "2024-08-20",
-    },
-  ];
-
-  const loadTasks = () =>
-    new Promise((res) => {
-      setTimeout(() => {
-        res(tasks);
-        tasks = [
+describe('When collapsibleConfig is absent in a field config', () => {
+  test('Checkbox and collapse field label should not appear', () => {
+    render(
+      <Form
+        onSave={() => {}}
+        profile={{}}
+        formConfig={[
           {
-            ...tasks[0],
-            status: tasks[0].status === "In Progress" ? "Pending" : "In Progress",
+            id: 'firstName',
+            type: 'TEXT',
+            label: 'First Name',
+            placeholder: 'Enter first name',
           },
-          ...tasks.slice(1),
-        ];
-      }, 100)
-    });
+        ]}
+      />
+    );
 
-  test("When data is refreshed in the table, it should be reflected in the card view too", async () => {
-    // jest.useFakeTimers();
-    render(<TaskManager loadTasks={loadTasks}/>);
-
-    const cellEl = await screen.findByText("Task 1");
-
-    let taskRowEl = screen.getByTestId(`task-row-${tasks[0].id}`);
-    let taskRowStatusCellEl = taskRowEl.querySelector('[data-cell-type="status"]');
-
-    expect(taskRowStatusCellEl.textContent).toBe("In Progress");
-
-    await user.click(cellEl);
-
-    let taskCardEl = screen.getByTestId("task-card");
-    let taskCardStatusSelectEl = taskCardEl.querySelector("#status");
-    expect(taskCardStatusSelectEl.dataset.value).toBe("In Progress");
-
-    const refreshButtonEl = screen.getByTestId("refresh-button");
-    await user.click(refreshButtonEl);
-
-    await waitFor(() => {
-      expect(taskRowStatusCellEl.textContent).toBe("Pending");
-    }, {timeout: 200});
-
-    expect(taskCardStatusSelectEl.dataset.value).toBe("Pending");
+    screen.getByLabelText('First Name');
+    expect(
+      screen.queryByTestId('collapsible-input-firstName')
+    ).not.toBeInTheDocument();
   });
 });
 
-describe("3.", () => {
-  let tasks = [
-    {
-      id: 1,
-      title: "Task 1",
-      status: "In Progress",
-      assignee: "Alice",
-      dueDate: "2024-08-20",
-    },
-  ];
+describe('Verify Initial Checkbox State and Collapsible Input Display', () => {
+  test('Checkbox should be checked by default and collapsible input should display value present in profile for that field', () => {
+    render(
+      <Form
+        onSave={() => {}}
+        profile={{
+          age: 30,
+        }}
+        formConfig={[
+          {
+            id: 'age',
+            type: 'NUMBER',
+            label: 'Age',
+            collapsibleConfig: {
+              title: 'Allow Age Selection',
+              initialValue: 45,
+            },
+          },
+        ]}
+      />
+    );
 
-  const loadTasks = () =>
-    new Promise((res) => {
-      setTimeout(() => {
-        res(tasks);
-      }, 100)
-    });
+    screen.getByLabelText('Age');
+    expect(screen.getByLabelText('Age')).toHaveValue(30);
+    screen.getByLabelText('Allow Age Selection');
 
-  test("Editing a task in the card view should also update the task in the table view", async () => {
-    render(<TaskManager loadTasks={loadTasks}/>);
+    expect(screen.getByTestId('collapsible-input-age').checked).toBe(true);
+  });
 
-    const cellEl = await screen.findByText("Task 1");
-    await user.click(cellEl);
+  test('Checkbox should be unchecked by default and collapsible input should not display the field', () => {
+    render(
+      <Form
+        onSave={() => {}}
+        profile={{ firstName: 'John', lastName: 'Doe' }}
+        formConfig={[
+          {
+            id: 'age',
+            type: 'NUMBER',
+            label: 'Age',
+            collapsibleConfig: {
+              title: 'Allow Age Selection',
+              initialValue: 45,
+            },
+          },
+        ]}
+      />
+    );
 
-    await screen.findByTestId("task-card");
+    expect(screen.queryByLabelText('Age')).not.toBeInTheDocument();
 
-    // In the task card, replace existing content with "hello world"
-    const inputEl = screen.getByLabelText('Title');
-    inputEl.setSelectionRange(0, inputEl.value.length);
+    screen.getByLabelText('Allow Age Selection');
 
-    await user.type(inputEl, "hello world");
-    await user.tab();
-
-    // In the task card, the updated value should be "hello world"
-    expect(screen.getByLabelText('Title').value).toBe("hello world");
-
-    const taskRowEl = await screen.findByTestId(`task-row-${tasks[0].id}`);
-
-    // In the table, the value should be "hello world"
-    expect(taskRowEl.querySelector('[data-cell-type="title"]').textContent).toBe("hello world");
+    expect(screen.getByTestId('collapsible-input-age').checked).toBe(false);
   });
 });
 
-describe("4.", () => {
-  let tasks = [
-    {
-      id: 1,
-      title: "Task 1",
-      status: "In Progress",
-      assignee: "Alice",
-      dueDate: "2024-08-20",
-    },
-    {
-      id: 2,
-      title: "Task 2",
-      status: "Pending",
-      assignee: "Bob",
-      dueDate: "2024-08-22",
-    },
-  ];
+describe('Verify Checkbox Behaviour in Collapsible Input', () => {
+  test('When user toggles it on, it should show the field', async () => {
+    render(
+      <Form
+        onSave={() => {}}
+        profile={{ firstName: 'John', lastName: 'Doe' }}
+        formConfig={[
+          {
+            id: 'age',
+            type: 'NUMBER',
+            label: 'Age',
+            collapsibleConfig: {
+              title: 'Allow Age Selection',
+              initialValue: 45,
+            },
+          },
+        ]}
+      />
+    );
 
-  const loadTasks = () =>
-    new Promise((res) => {
-      setTimeout(() => {
-        res(tasks);
-      }, 100)
-    });
+    expect(screen.queryByLabelText('Age')).not.toBeInTheDocument();
 
-  test("Clicking on a task in the table should update the task card view", async () => {
-    render(<TaskManager loadTasks={loadTasks}/>);
+    screen.getByLabelText('Allow Age Selection');
 
-    await user.click(await screen.findByText("Task 1"));
+    expect(screen.getByTestId('collapsible-input-age').checked).toBe(false);
 
-    await screen.findByTestId("task-card");
+    await user.click(screen.getByLabelText('Allow Age Selection'));
 
-    // the value in the task card
-    expect(screen.getByLabelText('Title').value).toBe("Task 1");
+    expect(screen.getByTestId('collapsible-input-age').checked).toBe(true);
 
-    await user.click(await screen.findByText("Task 2"));
+    screen.getByLabelText('Age');
+  });
 
-    // the value in the task card
-    expect(screen.getByLabelText('Title').value).toBe("Task 2");
+  test('When user toggles it off, it should hide the field', async () => {
+    render(
+      <Form
+        onSave={() => {}}
+        profile={{ firstName: 'John', lastName: 'Doe', age: 15 }}
+        formConfig={[
+          {
+            id: 'age',
+            type: 'NUMBER',
+            label: 'Age',
+            collapsibleConfig: {
+              title: 'Allow Age Selection',
+              initialValue: 45,
+            },
+          },
+        ]}
+      />
+    );
+
+    screen.getByLabelText('Age');
+    expect(screen.getByLabelText('Age')).toHaveValue(15);
+    screen.getByLabelText('Allow Age Selection');
+
+    expect(screen.getByTestId('collapsible-input-age').checked).toBe(true);
+
+    await user.click(screen.getByLabelText('Allow Age Selection'));
+
+    expect(screen.getByTestId('collapsible-input-age').checked).toBe(false);
+
+    expect(screen.queryByLabelText('Age')).not.toBeInTheDocument();
   });
 });
 
-describe("5.", () => {
-  test("TaskCard should not render unnecessarily", async () => {
-    let task = {
-      id: 1,
-      title: "Task 1",
-      status: "In Progress",
-      assignee: "Alice",
-      dueDate: "2024-08-20",
-    };
+describe('Verify Save Behaviour for Collapsible Input Field', () => {
+  test('When user toggles collapsible field off, on submitting the form undefined value should be saved', async () => {
+    const mockSave = jest.fn();
+    render(
+      <Form
+        onSave={mockSave}
+        profile={{
+          age: 30,
+          firstName: 'John',
+        }}
+        formConfig={[
+          {
+            id: 'firstName',
+            type: 'TEXT',
+            label: 'First Name',
+            placeholder: 'Enter first name',
+          },
+          {
+            id: 'lastName',
+            type: 'TEXT',
+            label: 'Last Name',
+            placeholder: 'Enter last name',
+            collapsibleConfig: {
+              title: 'Allow Last Name',
+            },
+          },
+          {
+            id: 'age',
+            type: 'NUMBER',
+            label: 'Age',
+            collapsibleConfig: {
+              title: 'Allow Age Selection',
+              initialValue: 45,
+            },
+          },
+        ]}
+      />
+    );
 
-    global.renderCountArgs = [];
+    screen.getByLabelText('Age');
+    expect(screen.getByLabelText('Age')).toHaveValue(30);
 
-    const {rerender} = render(<TaskCard task={task} statuses={[]} users={[]}/>);
+    user.click(screen.getByLabelText('Allow Age Selection'));
 
-    task = {...task};
-    rerender(<TaskCard task={task} statuses={[]} users={[]}/>);
-    expect(global.renderCountArgs).toEqual([
-      [1],
-      [2],
-    ]);
+    expect(screen.getByTestId('collapsible-input-age').checked).toBe(false);
+
+    await user.click(screen.getByText('Save'));
+
+    expect(mockSave).toHaveBeenCalledWith({
+      age: undefined,
+      firstName: 'John',
+    });
   });
-})
 
+  test('When user toggles on collapsible field having some initial value, on submitting the form initial value should be saved', async () => {
+    const mockSave = jest.fn();
+    render(
+      <Form
+        onSave={mockSave}
+        profile={{
+          lastName: 'Doe',
+          firstName: 'John',
+        }}
+        formConfig={[
+          {
+            id: 'firstName',
+            type: 'TEXT',
+            label: 'First Name',
+            placeholder: 'Enter first name',
+          },
+          {
+            id: 'lastName',
+            type: 'TEXT',
+            label: 'Last Name',
+            placeholder: 'Enter last name',
+            collapsibleConfig: {
+              title: 'Allow Last Name',
+            },
+          },
+          {
+            id: 'age',
+            type: 'NUMBER',
+            label: 'Age',
+            collapsibleConfig: {
+              title: 'Allow Age Selection',
+              initialValue: 45,
+            },
+          },
+        ]}
+      />
+    );
+
+    expect(screen.queryByLabelText('Age')).not.toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Allow Age Selection'));
+
+    expect(screen.getByTestId('collapsible-input-age').checked).toBe(true);
+
+    screen.getByLabelText('Age');
+
+    expect(screen.getByLabelText('Age')).toHaveValue(45);
+
+    await user.click(screen.getByText('Save'));
+
+    expect(mockSave).toHaveBeenCalledWith({
+      age: 45,
+      firstName: 'John',
+      lastName: 'Doe',
+    });
+  });
+
+  test('When user toggles on collapsible field without some initial value, on submitting the form undefined should be saved', async () => {
+    const mockSave = jest.fn();
+    render(
+      <Form
+        onSave={mockSave}
+        profile={{
+          lastName: 'Doe',
+          firstName: 'John',
+        }}
+        formConfig={[
+          {
+            id: 'firstName',
+            type: 'TEXT',
+            label: 'First Name',
+            placeholder: 'Enter first name',
+          },
+          {
+            id: 'lastName',
+            type: 'TEXT',
+            label: 'Last Name',
+            placeholder: 'Enter last name',
+            collapsibleConfig: {
+              title: 'Allow Last Name',
+            },
+          },
+          {
+            id: 'age',
+            type: 'NUMBER',
+            label: 'Age',
+            collapsibleConfig: {
+              title: 'Allow Age Selection',
+            },
+          },
+        ]}
+      />
+    );
+
+    expect(screen.queryByLabelText('Age')).not.toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Allow Age Selection'));
+
+    expect(screen.getByTestId('collapsible-input-age').checked).toBe(true);
+
+    screen.getByLabelText('Age');
+
+    await user.click(screen.getByText('Save'));
+
+    expect(mockSave).toHaveBeenCalledWith({
+      age: undefined,
+      firstName: 'John',
+      lastName: 'Doe',
+    });
+  });
+
+  test('Toggling collapsible field back on should display previously filled value and on submitting the form updated value should be saved', async () => {
+    const mockSave = jest.fn();
+    render(
+      <Form
+        onSave={mockSave}
+        profile={{
+          lastName: 'Deb',
+          firstName: 'John',
+        }}
+        formConfig={[
+          {
+            id: 'firstName',
+            type: 'TEXT',
+            label: 'First Name',
+            placeholder: 'Enter first name',
+          },
+          {
+            id: 'lastName',
+            type: 'TEXT',
+            label: 'Last Name',
+            placeholder: 'Enter last name',
+            collapsibleConfig: {
+              title: 'Allow Last Name',
+              initialValue: 'Doe'
+            },
+          },
+          {
+            id: 'age',
+            type: 'NUMBER',
+            label: 'Age',
+            collapsibleConfig: {
+              title: 'Allow Age Selection',
+              initialValue: 33,
+            },
+          },
+        ]}
+      />
+    );
+
+    const lastNameInput = screen.getByLabelText('Last Name');
+
+    expect(lastNameInput).toHaveValue('Deb');
+
+    await user.clear(lastNameInput);
+
+    await user.type(lastNameInput, 'Touie');
+
+    expect(lastNameInput).toHaveValue('Touie');
+
+    await user.click(screen.getByLabelText('Allow Last Name'));
+    await user.click(screen.getByLabelText('Allow Age Selection'));
+
+    expect(screen.queryByLabelText('Last Name')).not.toBeInTheDocument();
+
+    screen.getByLabelText('Age');
+    expect(screen.getByLabelText('Age')).toHaveValue(33);
+
+    await user.click(screen.getByLabelText('Allow Last Name'));
+
+    expect(screen.getByLabelText('Last Name')).toHaveValue('Touie');
+
+    await user.click(screen.getByText('Save'));
+
+    expect(mockSave).toHaveBeenCalledWith({
+      lastName: 'Touie',
+      firstName: 'John',
+      age: 33,
+    });
+  });
+});
