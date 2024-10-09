@@ -1,29 +1,27 @@
 import { TextField } from './components/fields/TextField';
 import { NumberField } from './components/fields/NumberField';
-import { SelectField } from './components/fields/SelectField';
 import { useState } from 'react';
 
 const TYPE_VS_COMPONENT = {
   TEXT: TextField,
   NUMBER: NumberField,
-  SELECT: SelectField,
 };
 
-export const Form = ({ onSave, formConfig, profile }) => {
-  const [formValues, setFormValues] = useState(profile);
+export const Form = ({ onSave, formConfig, initialValues }) => {
+  const [formValues, setFormValues] = useState(initialValues);
 
   const handleSubmit = (e) => {
     // Prevent the browser from reloading the page
     e.preventDefault();
 
-    onSave(formValues);
+    onSave(stripTypenames(formValues));
   };
 
   return (
     <form onSubmit={handleSubmit}>
       <div className="space-y-6">
         <h2 className="text-lg font-semibold leading-7 text-gray-900">
-          Personal Information
+          Enter File Information
         </h2>
 
         <div className="flex flex-col gap-6">

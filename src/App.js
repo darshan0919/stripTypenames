@@ -2,11 +2,11 @@ import React from 'react';
 import './styles.css';
 import { Form } from './components/form';
 import { FORM_CONFIG } from './constants/formConfig';
-import { PROFILE_CONFIG } from './constants/profileConfig';
+import { INITIAL_VALUES } from './constants/initialValues';
 
 export default function App() {
   const handleSave = (formData) => {
-    console.log('Save' ,formData);
+    console.log('Save', formData);
   };
 
   return (
@@ -14,7 +14,7 @@ export default function App() {
       <Form
         onSave={handleSave}
         formConfig={FORM_CONFIG}
-        profile={PROFILE_CONFIG}
+        initialValues={INITIAL_VALUES}
       />
     </div>
   );

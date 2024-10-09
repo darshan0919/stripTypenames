@@ -1,17 +1,16 @@
 export const FORM_CONFIG = [
   {
-    id: 'fileName',
+    id: 'name',
     type: 'TEXT',
-    label: 'First Name',
-    placeholder: 'Enter first name',
+    label: 'File Name',
+    placeholder: 'Enter file name',
+    disabled: true,
   },
   {
-    id: 'size',
+    id: 'length',
     type: 'NUMBER',
     label: 'Size',
-    collapsibleConfig: {
-      title: 'Allow Age Selection',
-      initialValue: 45,
-    },
+    placeholder: 'Enter file size',
+    disabled: true,
   },
 ];
